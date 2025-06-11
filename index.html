@@ -41,38 +41,36 @@
   <div id="answer-list">Loading...</div>
 
   <script>
-    const SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTJ3dCKP-1gfbznYLElNRMKureENz9qHqQ6ZBudyTyyeNRgqu50USiemgxnBY5wDqFwOoBz1brBfUDI/pub?output=csv';
+  const SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTJ3dCKP-1gfbznYLElNRMKureENz9qHqQ6ZBudyTyyeNRgqu50USiemgxnBY5wDqFwOoBz1brBfUDI/pub?output=csv';
 
-    fetch(SHEET_CSV_URL)
-      .then(response => response.text())
-      .then(csvText => {
-        const rows = csvText.trim().split('\n').map(line => line.split(','));
-        const header = rows[0];
-        const answerIndex = header.findIndex(col => col.toLowerCase().includes('jawaban') || col.toLowerCase().includes('answer'));
-        
-        const validRows = rows.slice(1).filter(row => row[answerIndex] && row[answerIndex].trim() !== '');
+  fetch(SHEET_CSV_URL)
+    .then(response => response.text())
+    .then(csvText => {
+      const parsed = Papa.parse(csvText, { header: true });
+      const data = parsed.data;
 
-        const html = validRows.reverse().slice(0, 5).map(row => {
-          const date = row[0];
-          const question = row[1];
-          const answer = row[answerIndex];
-          return `
-            <div class="answer-card">
-              <strong>📅 ${date}</strong><br>
-              <em>❓ ${question}</em><br><br>
-              <strong>💡 Answer:</strong><br>
-              ${answer}
-            </div>
-          `;
-        }).join('');
+      // Cari kolom jawaban otomatis (berisi jawaban Gemini)
+      const answerKey = Object.keys(data[0]).find(k => k.toLowerCase().includes('jawaban') || k.toLowerCase().includes('answer'));
 
-        document.getElementById('answer-list').innerHTML = html || 'No valid answers yet.';
-      })
-      .catch(err => {
-        console.error(err);
-        document.getElementById('answer-list').textContent = 'Failed to load answers.';
-      });
-  </script>
+      const validRows = data.filter(row => row[answerKey] && row[answerKey].trim() !== '');
+
+      const html = validRows.reverse().slice(0, 5).map(row => `
+        <div class="answer-card">
+          <strong>📅 ${row['Timestamp'] || 'Unknown date'}</strong><br>
+          <em>❓ ${row['Pertanyaan'] || 'No question'}</em><br><br>
+          <strong>💡 Answer:</strong><br>
+          ${row[answerKey]}
+        </div>
+      `).join('');
+
+      document.getElementById('answer-list').innerHTML = html || 'No valid answers yet.';
+    })
+    .catch(err => {
+      console.error(err);
+      document.getElementById('answer-list').textContent = 'Failed to load answers.';
+    });
+</script>
+
 
 </body>
 </html>
