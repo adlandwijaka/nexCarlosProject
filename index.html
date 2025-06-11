@@ -46,33 +46,36 @@
   <script>
     const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTJ3dCKP-1gfbznYLElNRMKureENz9qHqQ6ZBudyTyyeNRgqu50USiemgxnBY5wDqFwOoBz1brBfUDI/pub?output=csv";
 
-    fetch(SHEET_CSV_URL)
-      .then(response => response.text())
-      .then(csvText => {
-        const rows = csvText.trim().split('\n').map(line => line.split(','));
-        const header = rows[0];
-        const answerIndex = header.findIndex(col => col.toLowerCase().includes('jawaban') || col.toLowerCase().includes('answer'));
-        
-        const html = rows.slice(1).reverse().slice(0, 5).map(row => {
-          const question = row[1]; // kolom Pertanyaan
-          const answer = row[answerIndex];
-          const date = row[0]; // Timestamp
-          return `
-            <div class="answer-card">
-              <strong>📅 ${date}</strong><br>
-              <em>❓ ${question}</em><br><br>
-              <strong>💡 Answer:</strong><br>
-              ${answer || 'No answer yet.'}
-            </div>
-          `;
-        }).join('');
+   fetch(SHEET_CSV_URL)
+  .then(response => response.text())
+  .then(csvText => {
+    const rows = csvText.trim().split('\n').map(line => line.split(','));
+    const header = rows[0];
+    const answerIndex = header.findIndex(col => col.toLowerCase().includes('jawaban') || col.toLowerCase().includes('answer'));
+    
+    // Filter rows with non-empty answer
+    const validRows = rows.slice(1).filter(row => row[answerIndex] && row[answerIndex].trim() !== '');
 
-        document.getElementById('answer-list').innerHTML = html || 'No data yet.';
-      })
-      .catch(err => {
-        console.error(err);
-        document.getElementById('answer-list').textContent = 'Failed to load answers.';
-      });
+    const html = validRows.reverse().slice(0, 5).map(row => {
+      const question = row[1]; // kolom Pertanyaan
+      const answer = row[answerIndex];
+      const date = row[0]; // Timestamp
+      return `
+        <div class="answer-card">
+          <strong>📅 ${date}</strong><br>
+          <em>❓ ${question}</em><br><br>
+          <strong>💡 Answer:</strong><br>
+          ${answer}
+        </div>
+      `;
+    }).join('');
+
+    document.getElementById('answer-list').innerHTML = html || 'No valid answers yet.';
+  })
+  .catch(err => {
+    console.error(err);
+    document.getElementById('answer-list').textContent = 'Failed to load answers.';
+  });
   </script>
 </body>
 </html>
