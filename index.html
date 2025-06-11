@@ -1,81 +1,78 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>Nex Carlos QnA</title>
+  <meta charset="UTF-8">
+  <title>Ask Gemini from Looker</title>
   <style>
     body {
       font-family: Arial, sans-serif;
-      padding: 20px;
       max-width: 800px;
       margin: auto;
+      padding: 20px;
     }
     iframe {
       width: 100%;
       border: none;
+      margin: 20px 0;
     }
-    .answers {
-      margin-top: 40px;
+    h2 {
+      border-bottom: 2px solid #ddd;
+      padding-bottom: 5px;
     }
     .answer-card {
       background: #f9f9f9;
-      border-radius: 8px;
+      border-radius: 10px;
       padding: 15px;
       margin-bottom: 15px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+      box-shadow: 0 0 5px rgba(0,0,0,0.05);
     }
   </style>
 </head>
 <body>
-  <!-- Looker Embed -->
-  <iframe 
-    src="https://lookerstudio.google.com/reporting/867a8554-1581-44e2-afe5-a4b4ba1efccb/page/1M" 
-    height="480" allowfullscreen></iframe>
 
-  <!-- Google Form Embed -->
-  <iframe 
-    src="https://docs.google.com/forms/d/e/1FAIpQLScbDPkgzOP6YCWgqHehOylUyqH5aA4b8jTIY9SZjIB-ZvdYNg/viewform?embedded=true" 
-    height="850" frameborder="0" marginheight="0" marginwidth="0">Loading…</iframe>
+  <!-- 📊 Looker Embed -->
+  <iframe src="https://lookerstudio.google.com/embed/reporting/867a8554-1581-44e2-afe5-a4b4ba1efccb/page/1M" height="480" allowfullscreen></iframe>
 
-  <!-- Recent Answers -->
-  <div class="answers">
-    <h2>📖 Recent Gemini Answers</h2>
-    <div id="answer-list">Loading...</div>
-  </div>
+  <!-- 📝 Google Form Embed -->
+  <iframe src="https://docs.google.com/forms/d/e/1FAIpQLScbDPkgzOP6YCWgqHehOylUyqH5aA4b8jTIY9SZjIB-ZvdYNg/viewform?embedded=true" height="900" frameborder="0" marginheight="0" marginwidth="0">Loading…</iframe>
+
+  <!-- 📖 Gemini Answer History -->
+  <h2>📖 Recent Gemini Answers</h2>
+  <div id="answer-list">Loading...</div>
 
   <script>
-    const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTJ3dCKP-1gfbznYLElNRMKureENz9qHqQ6ZBudyTyyeNRgqu50USiemgxnBY5wDqFwOoBz1brBfUDI/pub?output=csv";
+    const SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTJ3dCKP-1gfbznYLElNRMKureENz9qHqQ6ZBudyTyyeNRgqu50USiemgxnBY5wDqFwOoBz1brBfUDI/pub?output=csv';
 
-   fetch(SHEET_CSV_URL)
-  .then(response => response.text())
-  .then(csvText => {
-    const rows = csvText.trim().split('\n').map(line => line.split(','));
-    const header = rows[0];
-    const answerIndex = header.findIndex(col => col.toLowerCase().includes('jawaban') || col.toLowerCase().includes('answer'));
-    
-    // Filter rows with non-empty answer
-    const validRows = rows.slice(1).filter(row => row[answerIndex] && row[answerIndex].trim() !== '');
+    fetch(SHEET_CSV_URL)
+      .then(response => response.text())
+      .then(csvText => {
+        const rows = csvText.trim().split('\n').map(line => line.split(','));
+        const header = rows[0];
+        const answerIndex = header.findIndex(col => col.toLowerCase().includes('jawaban') || col.toLowerCase().includes('answer'));
+        
+        const validRows = rows.slice(1).filter(row => row[answerIndex] && row[answerIndex].trim() !== '');
 
-    const html = validRows.reverse().slice(0, 5).map(row => {
-      const question = row[1]; // kolom Pertanyaan
-      const answer = row[answerIndex];
-      const date = row[0]; // Timestamp
-      return `
-        <div class="answer-card">
-          <strong>📅 ${date}</strong><br>
-          <em>❓ ${question}</em><br><br>
-          <strong>💡 Answer:</strong><br>
-          ${answer}
-        </div>
-      `;
-    }).join('');
+        const html = validRows.reverse().slice(0, 5).map(row => {
+          const date = row[0];
+          const question = row[1];
+          const answer = row[answerIndex];
+          return `
+            <div class="answer-card">
+              <strong>📅 ${date}</strong><br>
+              <em>❓ ${question}</em><br><br>
+              <strong>💡 Answer:</strong><br>
+              ${answer}
+            </div>
+          `;
+        }).join('');
 
-    document.getElementById('answer-list').innerHTML = html || 'No valid answers yet.';
-  })
-  .catch(err => {
-    console.error(err);
-    document.getElementById('answer-list').textContent = 'Failed to load answers.';
-  });
+        document.getElementById('answer-list').innerHTML = html || 'No valid answers yet.';
+      })
+      .catch(err => {
+        console.error(err);
+        document.getElementById('answer-list').textContent = 'Failed to load answers.';
+      });
   </script>
+
 </body>
 </html>
