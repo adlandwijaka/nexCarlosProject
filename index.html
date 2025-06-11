@@ -1,69 +1,96 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title>Ask Anything</title>
+    <title>Ask Anything Dashboard</title>
     <style>
       body {
         font-family: Arial, sans-serif;
-        max-width: 800px;
+        max-width: 900px;
         margin: auto;
         padding: 20px;
-        background: #f5f5f5;
+        background: #f9f9f9;
       }
+
       iframe {
         width: 100%;
-        height: 850px;
         border: none;
       }
-      h2 {
+
+      .section {
         margin-top: 40px;
       }
-      pre {
+
+      .history-item {
         background: #fff;
         padding: 15px;
         border: 1px solid #ddd;
-        overflow-x: auto;
+        border-radius: 6px;
+        margin-bottom: 20px;
+      }
+
+      h1, h2 {
+        color: #333;
       }
     </style>
   </head>
   <body>
-    <h1>Ask Anything 👇</h1>
-    <iframe src="https://docs.google.com/forms/d/e/1FAIpQLScbDPkgzOP6YCWgqHehOylUyqH5aA4b8jTIY9SZjIB-ZvdYNg/viewform?embedded=true" loading="lazy"></iframe>
+    <!-- Looker Embed -->
+    <h1>📊 Insights Dashboard</h1>
+    <iframe
+      src="https://lookerstudio.google.com/embed/reporting/867a8554-1581-44e2-afe5-a4b4ba1efccb/page/1M"
+      height="600"
+      allowfullscreen
+    ></iframe>
 
-    <h2>Gemini Answer History</h2>
-    <div id="history">Loading answers...</div>
+    <!-- Google Form -->
+    <div class="section">
+      <h2>📝 Ask a Question</h2>
+      <iframe
+        src="https://docs.google.com/forms/d/e/1FAIpQLScbDPkgzOP6YCWgqHehOylUyqH5aA4b8jTIY9SZjIB-ZvdYNg/viewform?embedded=true"
+        height="850"
+      >
+        Loading…
+      </iframe>
+    </div>
+
+    <!-- History -->
+    <div class="section">
+      <h2>📖 Recent Gemini Answers</h2>
+      <div id="history">Loading history...</div>
+    </div>
 
     <script>
       async function fetchSheetData() {
+        const sheetURL =
+          "https://docs.google.com/spreadsheets/d/1ow2qXXCDc_TihdS3iSPgZzS6YB5Omi3NwOfENNigfUs/gviz/tq?tqx=out:csv&sheet=Form%20responses%201";
+
         try {
-          const sheetURL =
-            "https://docs.google.com/spreadsheets/d/1ow2qXXCDc_TihdS3iSPgZzS6YB5Omi3NwOfENNigfUs/gviz/tq?tqx=out:csv&sheet=Form%20responses%201";
           const response = await fetch(sheetURL);
           const text = await response.text();
 
           const rows = text
             .trim()
             .split("\n")
-            .slice(1) // skip header
+            .slice(1)
             .map((row) => row.split(","));
 
           const html = rows
             .reverse()
-            .slice(0, 5) // show last 5
+            .slice(0, 5)
             .map(
-              ([timestamp, pertanyaan, from, to, jawaban]) => `
-              <div style="margin-bottom: 20px;">
-                <strong>${pertanyaan}</strong><br/>
-                <em>${jawaban || "(no response yet)"}</em><br/>
-                <small>Asked: ${timestamp}</small>
+              ([timestamp, question, from, to, answer]) => `
+              <div class="history-item">
+                <strong>Q:</strong> ${question}<br />
+                <strong>A:</strong> ${answer || "<i>Waiting for response...</i>"}<br />
+                <small><em>${timestamp}</em></small>
               </div>`
             )
             .join("");
 
-          document.getElementById("history").innerHTML = html || "No data found.";
+          document.getElementById("history").innerHTML = html || "No data yet.";
         } catch (err) {
-          console.error("Fetch error:", err);
-          document.getElementById("history").textContent = "Failed to load history.";
+          console.error(err);
+          document.getElementById("history").textContent = "Error loading data.";
         }
       }
 
