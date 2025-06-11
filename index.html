@@ -1,65 +1,73 @@
 <!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <title>Ask Gemini from Sheet</title>
-  <script defer>
-    const SHEET_ID = "1ow2qXXCDc_TihdS3iSPgZzS6YB5Omi3NwOfENNigfUs";
-    const SHEET_NAME = "Form responses 1";
-    const FORM_URL = "https://docs.google.com/forms/d/e/16B5ZKtZ809W-xQWMwgliQQ7Po12o3hv09NFx23WzO80/viewform";
+<html>
+  <head>
+    <title>Ask Anything</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        max-width: 800px;
+        margin: auto;
+        padding: 20px;
+        background: #f5f5f5;
+      }
+      iframe {
+        width: 100%;
+        height: 850px;
+        border: none;
+      }
+      h2 {
+        margin-top: 40px;
+      }
+      pre {
+        background: #fff;
+        padding: 15px;
+        border: 1px solid #ddd;
+        overflow-x: auto;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Ask Anything 👇</h1>
+    <iframe src="https://docs.google.com/forms/d/e/1FAIpQLScbDPkgzOP6YCWgqHehOylUyqH5aA4b8jTIY9SZjIB-ZvdYNg/viewform?embedded=true" loading="lazy"></iframe>
 
-    function loadSheetData() {
-      const CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(SHEET_NAME)}`;
-      fetch(CSV_URL)
-        .then(res => res.text())
-        .then(csv => {
-          const rows = csv.trim().split("\n");
-          const headers = rows[0].split(",");
+    <h2>Gemini Answer History</h2>
+    <div id="history">Loading answers...</div>
 
-          const tableBody = document.getElementById("history-body");
-          tableBody.innerHTML = "";
+    <script>
+      async function fetchSheetData() {
+        try {
+          const sheetURL =
+            "https://docs.google.com/spreadsheets/d/1ow2qXXCDc_TihdS3iSPgZzS6YB5Omi3NwOfENNigfUs/gviz/tq?tqx=out:csv&sheet=Form%20responses%201";
+          const response = await fetch(sheetURL);
+          const text = await response.text();
 
-          for (let i = 1; i < rows.length; i++) {
-            const cols = rows[i].split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(c => c.replace(/^"|"$/g, ""));
-            if (cols.length < 5) continue;
+          const rows = text
+            .trim()
+            .split("\n")
+            .slice(1) // skip header
+            .map((row) => row.split(","));
 
-            const [timestamp, question, from, to, ...rest] = cols;
-            const answer = rest.pop(); // kolom terakhir
-            const tr = document.createElement("tr");
-            [timestamp, question, from, to, answer].forEach(text => {
-              const td = document.createElement("td");
-              td.textContent = text;
-              td.style.borderTop = "1px solid #ccc";
-              td.style.padding = "8px";
-              tr.appendChild(td);
-            });
-            tableBody.appendChild(tr);
-          }
-        });
-    }
+          const html = rows
+            .reverse()
+            .slice(0, 5) // show last 5
+            .map(
+              ([timestamp, pertanyaan, from, to, jawaban]) => `
+              <div style="margin-bottom: 20px;">
+                <strong>${pertanyaan}</strong><br/>
+                <em>${jawaban || "(no response yet)"}</em><br/>
+                <small>Asked: ${timestamp}</small>
+              </div>`
+            )
+            .join("");
 
-    window.addEventListener("DOMContentLoaded", loadSheetData);
-  </script>
-</head>
-<body style="font-family: sans-serif; padding: 20px;">
+          document.getElementById("history").innerHTML = html || "No data found.";
+        } catch (err) {
+          console.error("Fetch error:", err);
+          document.getElementById("history").textContent = "Failed to load history.";
+        }
+      }
 
-  <h2>Ask Anything to Gemini (Based on Dashboard)</h2>
-
-  <iframe src="${FORM_URL}?embedded=true" width="100%" height="500" frameborder="0" marginheight="0" marginwidth="0">Loading…</iframe>
-
-  <h3 style="margin-top: 40px;">📊 Gemini Response History</h3>
-  <table width="100%" cellspacing="0" cellpadding="0" style="border-collapse: collapse; width: 100%;">
-    <thead style="background: #f5f5f5;">
-      <tr>
-        <th style="text-align: left; padding: 8px;">Timestamp</th>
-        <th style="text-align: left; padding: 8px;">Question</th>
-        <th style="text-align: left; padding: 8px;">Period From</th>
-        <th style="text-align: left; padding: 8px;">Period To</th>
-        <th style="text-align: left; padding: 8px;">Answer</th>
-      </tr>
-    </thead>
-    <tbody id="history-body"></tbody>
-  </table>
-
-</body>
+      fetchSheetData();
+    </script>
+  </body>
 </html>
