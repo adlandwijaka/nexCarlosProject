@@ -1,100 +1,78 @@
 <!DOCTYPE html>
-<html>
-  <head>
-    <title>Ask Anything Dashboard</title>
-    <style>
-      body {
-        font-family: Arial, sans-serif;
-        max-width: 900px;
-        margin: auto;
-        padding: 20px;
-        background: #f9f9f9;
-      }
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Nex Carlos QnA</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      max-width: 800px;
+      margin: auto;
+    }
+    iframe {
+      width: 100%;
+      border: none;
+    }
+    .answers {
+      margin-top: 40px;
+    }
+    .answer-card {
+      background: #f9f9f9;
+      border-radius: 8px;
+      padding: 15px;
+      margin-bottom: 15px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+    }
+  </style>
+</head>
+<body>
+  <!-- Looker Embed -->
+  <iframe 
+    src="https://lookerstudio.google.com/reporting/867a8554-1581-44e2-afe5-a4b4ba1efccb/page/1M" 
+    height="480" allowfullscreen></iframe>
 
-      iframe {
-        width: 100%;
-        border: none;
-      }
+  <!-- Google Form Embed -->
+  <iframe 
+    src="https://docs.google.com/forms/d/e/1FAIpQLScbDPkgzOP6YCWgqHehOylUyqH5aA4b8jTIY9SZjIB-ZvdYNg/viewform?embedded=true" 
+    height="850" frameborder="0" marginheight="0" marginwidth="0">Loading…</iframe>
 
-      .section {
-        margin-top: 40px;
-      }
+  <!-- Recent Answers -->
+  <div class="answers">
+    <h2>📖 Recent Gemini Answers</h2>
+    <div id="answer-list">Loading...</div>
+  </div>
 
-      .history-item {
-        background: #fff;
-        padding: 15px;
-        border: 1px solid #ddd;
-        border-radius: 6px;
-        margin-bottom: 20px;
-      }
+  <script>
+    const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTJ3dCKP-1gfbznYLElNRMKureENz9qHqQ6ZBudyTyyeNRgqu50USiemgxnBY5wDqFwOoBz1brBfUDI/pub?output=csv";
 
-      h1, h2 {
-        color: #333;
-      }
-    </style>
-  </head>
-  <body>
-    <!-- Looker Embed -->
-    <h1>📊 Insights Dashboard</h1>
-    <iframe
-      src="https://lookerstudio.google.com/embed/reporting/867a8554-1581-44e2-afe5-a4b4ba1efccb/page/1M"
-      height="600"
-      allowfullscreen
-    ></iframe>
+    fetch(SHEET_CSV_URL)
+      .then(response => response.text())
+      .then(csvText => {
+        const rows = csvText.trim().split('\n').map(line => line.split(','));
+        const header = rows[0];
+        const answerIndex = header.findIndex(col => col.toLowerCase().includes('jawaban') || col.toLowerCase().includes('answer'));
+        
+        const html = rows.slice(1).reverse().slice(0, 5).map(row => {
+          const question = row[1]; // kolom Pertanyaan
+          const answer = row[answerIndex];
+          const date = row[0]; // Timestamp
+          return `
+            <div class="answer-card">
+              <strong>📅 ${date}</strong><br>
+              <em>❓ ${question}</em><br><br>
+              <strong>💡 Answer:</strong><br>
+              ${answer || 'No answer yet.'}
+            </div>
+          `;
+        }).join('');
 
-    <!-- Google Form -->
-    <div class="section">
-      <h2>📝 Ask a Question</h2>
-      <iframe
-        src="https://docs.google.com/forms/d/e/1FAIpQLScbDPkgzOP6YCWgqHehOylUyqH5aA4b8jTIY9SZjIB-ZvdYNg/viewform?embedded=true"
-        height="850"
-      >
-        Loading…
-      </iframe>
-    </div>
-
-    <!-- History -->
-    <div class="section">
-      <h2>📖 Recent Gemini Answers</h2>
-      <div id="history">Loading history...</div>
-    </div>
-
-    <script>
-      async function fetchSheetData() {
-        const sheetURL =
-          "https://docs.google.com/spreadsheets/d/1ow2qXXCDc_TihdS3iSPgZzS6YB5Omi3NwOfENNigfUs/gviz/tq?tqx=out:csv&sheet=Form%20responses%201";
-
-        try {
-          const response = await fetch(sheetURL);
-          const text = await response.text();
-
-          const rows = text
-            .trim()
-            .split("\n")
-            .slice(1)
-            .map((row) => row.split(","));
-
-          const html = rows
-            .reverse()
-            .slice(0, 5)
-            .map(
-              ([timestamp, question, from, to, answer]) => `
-              <div class="history-item">
-                <strong>Q:</strong> ${question}<br />
-                <strong>A:</strong> ${answer || "<i>Waiting for response...</i>"}<br />
-                <small><em>${timestamp}</em></small>
-              </div>`
-            )
-            .join("");
-
-          document.getElementById("history").innerHTML = html || "No data yet.";
-        } catch (err) {
-          console.error(err);
-          document.getElementById("history").textContent = "Error loading data.";
-        }
-      }
-
-      fetchSheetData();
-    </script>
-  </body>
+        document.getElementById('answer-list').innerHTML = html || 'No data yet.';
+      })
+      .catch(err => {
+        console.error(err);
+        document.getElementById('answer-list').textContent = 'Failed to load answers.';
+      });
+  </script>
+</body>
 </html>
